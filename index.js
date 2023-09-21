@@ -10,11 +10,11 @@ const app = express();
 app.use(logger('dev'));
 
 // whitelist ips
-app.use(ipfilter({
+app.use(ipfilter(config.whitelistIps, {
 	detectIp: (req, res) => {
 		return req.headers['x-forwarded-for'] ? (req.headers['x-forwarded-for']).split(',')[0] : '';		// remove detectIp if x-forwarded-for not supported
 	},
-	filter: config.whitelistIps,
+	mode: 'allow',
 }));
 
 app.use('/', createProxyMiddleware({
