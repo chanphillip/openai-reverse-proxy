@@ -10,7 +10,12 @@ const app = express();
 app.use(logger('dev'));
 
 // whitelist ips
-app.use(ipfilter(config.whitelistIps));
+app.use(ipfilter({
+	detectIp: (req, res) => {
+		return req.headers['x-forwarded-for'] ? (req.headers['x-forwarded-for']).split(',')[0] : '';		// remove detectIp if x-forwarded-for not supported
+	},
+	filter: config.whitelistIps,
+}));
 
 app.use('/', createProxyMiddleware({
 	target: 'https://api.openai.com',
