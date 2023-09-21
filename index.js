@@ -1,12 +1,16 @@
 const express = require('express');
 const logger = require('morgan');
 const createProxyMiddleware = require('http-proxy-middleware').createProxyMiddleware;
+const ipfilter = require('express-ipfilter').IpFilter;
 
 const config = require('./config');
 
 const app = express();
 
 app.use(logger('dev'));
+
+// whitelist ips
+app.use(ipfilter(config.whitelistIps));
 
 app.use('/', createProxyMiddleware({
 	target: 'https://api.openai.com',
