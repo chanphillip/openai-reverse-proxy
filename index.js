@@ -1,7 +1,12 @@
 const express = require('express');
 const logger = require('morgan');
 const createProxyMiddleware = require('http-proxy-middleware').createProxyMiddleware;
-const ipfilter = require('express-ipfilter').IpFilter;
+const { IpDeniedError, IpFilter } = require('express-ipfilter');
+const bodyParser = require('body-parser');
+
+require('./log4js')();
+const log4js = require('log4js');
+const proxyLogger = log4js.getLogger('proxy');
 
 const config = require('./config');
 
@@ -10,19 +15,44 @@ const app = express();
 app.use(logger('dev'));
 
 // whitelist ips
-app.use(ipfilter(config.whitelistIps, {
+app.use(IpFilter(config.whitelistIps, {
 	detectIp: (req, res) => {
 		return req.headers['x-forwarded-for'] ? (req.headers['x-forwarded-for']).split(',')[0] : '';		// remove detectIp if x-forwarded-for not supported
 	},
 	mode: 'allow',
 }));
 
-app.use('/', createProxyMiddleware({
+app.use(bodyParser.json());
+
+app.use('/', (req, res, next) => {
+	proxyLogger.info(req.originalUrl);
+	if (req.body) {
+		proxyLogger.info(JSON.stringify(req.body));
+	}
+	next();
+}, createProxyMiddleware({
 	target: 'https://api.openai.com',
 	changeOrigin: true,
 	onProxyReq: (proxyReq, req, res) => {
 		console.log(req.originalUrl);
+
 		proxyReq.setHeader('Authorization', `Bearer ${config.apiKey}`);
+
+		if (!req.body || !Object.keys(req.body).length) {
+			return;
+		}
+
+		const contentType = proxyReq.getHeader('Content-Type');
+		let bodyData;
+
+		if (contentType === 'application/json') {
+			bodyData = JSON.stringify(req.body);
+		}
+
+		if (bodyData) {
+			proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+			proxyReq.write(bodyData);
+		}
 	},
 	onProxyRes: (proxyRes, req, res) => {
 		proxyRes.headers['Access-Control-Allow-Origin'] = '*';
