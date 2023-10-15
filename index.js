@@ -60,18 +60,10 @@ app.use('/', (req, res, next) => {
 	},
 }));
 
+// error handler
 app.use((err, req, res, next) => {
-	if (err instanceof IpDeniedError) {
-		res.status(401);
-	} else {
-		res.status(err.status || 500);
-	};
-
-	res.render('error', {
-		message: 'You shall not pass',
-		error: err
-	});
-})
+	res.status(err.status || 500).send('Error');
+});
 
 app.listen(config.port, () => {
 	console.log(`Server started... (port: ${config.port})`);
