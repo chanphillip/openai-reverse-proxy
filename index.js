@@ -57,6 +57,9 @@ app.use('/', (req, res, next) => {
 	onProxyRes: (proxyRes, req, res) => {
 		proxyRes.headers['Access-Control-Allow-Origin'] = '*';
 		proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With';
+		if (proxyRes.statusCode >= 400) {
+			console.error(`[API ERROR] ${proxyRes.statusCode} ${proxyRes.statusMessage}`);
+		}
 	},
 }));
 
