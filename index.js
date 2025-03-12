@@ -22,7 +22,7 @@ app.use(IpFilter(config.whitelistIps, {
 	mode: 'allow',
 }));
 
-app.use(bodyParser.json( limit: '20mb' ));
+app.use(bodyParser.json({ limit: '20mb' }));
 
 app.use('/', (req, res, next) => {
 	proxyLogger.info(req.originalUrl);
